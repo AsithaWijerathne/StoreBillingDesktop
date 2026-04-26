@@ -1,9 +1,73 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        xmlns:models="using:StoreBillingDesktop.Models"
+        xmlns:vm="using:StoreBillingDesktop.ViewModels" 
+        x:DataType="vm:MainViewModel" 
         x:Class="StoreBillingDesktop.MainWindow"
-        Title="StoreBillingDesktop">
-    Welcome to Avalonia!
+        Title="Store Billing System" Width="800" Height="600">
+    <Grid ColumnDefinitions="6*, 4*">
+        
+        <Grid Grid.Column="0" RowDefinitions="Auto, Auto, *, Auto" Margin="0,0,10,0">
+            
+            <StackPanel Grid.Row="0" Margin="20" Spacing="10">
+                <TextBlock Text="Point of Sale - Billing" FontSize="24" FontWeight="Bold" />
+                <TextBlock Text="Scan Barcode (or type and press Enter):" />
+                <TextBox x:Name="BarcodeScannerInput" 
+                         Watermark="Click here to scan..." 
+                         KeyDown="BarcodeScannerInput_KeyDown" 
+                         FontSize="18" />
+                <TextBlock Text="{Binding ScanResultMessage}" 
+                           FontSize="20" Foreground="Blue" Margin="0,10,0,0" FontWeight="Bold"/>
+            </StackPanel>
+
+            <TextBlock Grid.Row="1" Text="Current Bill:" Margin="20,10,20,5" FontWeight="Bold"/>
+
+            <ListBox Grid.Row="2" ItemsSource="{Binding CurrentBill}" Margin="20,0,20,10">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="models:Product">
+                        <StackPanel Orientation="Horizontal" Spacing="30">
+                            <TextBlock Text="{Binding Barcode}" Width="100" FontWeight="Bold"/>
+                            <TextBlock Text="{Binding Name}" Width="200"/>
+                            <TextBlock Text="{Binding Price, StringFormat='Rs. {0:N2}'}" Width="100" Foreground="Green"/>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            
+            <Border Grid.Row="3" Background="#eee" Padding="20">
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="15">
+                    <TextBlock Text="Total:" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
+                    <TextBlock Text="{Binding BillTotal, StringFormat='Rs. {0:N2}'}" 
+                               FontSize="28" FontWeight="Bold" Foreground="Red" />
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <Border Grid.Column="1" Background="#f8f9fa" BorderBrush="#ddd" BorderThickness="1,0,0,0" Padding="20">
+            <StackPanel Spacing="15">
+                <TextBlock Text="Inventory Management" FontSize="20" FontWeight="Bold" />
+                
+                <TextBlock Text="Barcode:" />
+                <TextBox Text="{Binding NewBarcode}" Watermark="e.g. 84127" />
+
+                <TextBlock Text="Product Name:" />
+                <TextBox Text="{Binding NewName}" Watermark="e.g. Samaposha 200g" />
+
+                <TextBlock Text="Price (Rs):" />
+                <TextBox Text="{Binding NewPrice}" Watermark="e.g. 180.00" />
+
+                <Button Content="Add to Database" 
+                        Command="{Binding AddNewProductCommand}" 
+                        Background="#007bff" Foreground="White" 
+                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                        Padding="10" Margin="0,10,0,0"/>
+
+                <TextBlock Text="{Binding AdminMessage}" 
+                           TextWrapping="Wrap" 
+                           Foreground="DarkOrange" 
+                           FontWeight="Bold"/>
+            </StackPanel>
+        </Border>
+
+    </Grid>
 </Window>
