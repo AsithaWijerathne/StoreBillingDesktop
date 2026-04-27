@@ -4,70 +4,147 @@
         xmlns:vm="using:StoreBillingDesktop.ViewModels" 
         x:DataType="vm:MainViewModel" 
         x:Class="StoreBillingDesktop.MainWindow"
-        Title="Store Billing System" Width="800" Height="600">
-    <Grid ColumnDefinitions="6*, 4*">
+        Title="Modern POS System" Width="1150" Height="750"
+        MinWidth="1100" MinHeight="700" 
+        Background="#F4F6F8">
+
+    <Window.Styles>
+        <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{Binding Background, RelativeSource={RelativeSource TemplatedParent}}" />
+            <Setter Property="Opacity" Value="0.8" /> 
+        </Style>
+    </Window.Styles>
+
+    <Grid ColumnDefinitions="55*, 45*" Margin="10">
         
-        <Grid Grid.Column="0" RowDefinitions="Auto, Auto, *, Auto" Margin="0,0,10,0">
+        <Grid Grid.Column="0" RowDefinitions="Auto, *, Auto" Margin="10">
             
-            <StackPanel Grid.Row="0" Margin="20" Spacing="10">
-                <TextBlock Text="Point of Sale - Billing" FontSize="24" FontWeight="Bold" />
-                <TextBlock Text="Scan Barcode (or type and press Enter):" />
-                <TextBox x:Name="BarcodeScannerInput" 
-                         Watermark="Click here to scan..." 
-                         KeyDown="BarcodeScannerInput_KeyDown" 
-                         FontSize="18" />
-                <TextBlock Text="{Binding ScanResultMessage}" 
-                           FontSize="20" Foreground="Blue" Margin="0,10,0,0" FontWeight="Bold"/>
-            </StackPanel>
-
-            <TextBlock Grid.Row="1" Text="Current Bill:" Margin="20,10,20,5" FontWeight="Bold"/>
-
-            <ListBox Grid.Row="2" ItemsSource="{Binding CurrentBill}" Margin="20,0,20,10">
-                <ListBox.ItemTemplate>
-                    <DataTemplate x:DataType="models:Product">
-                        <StackPanel Orientation="Horizontal" Spacing="30">
-                            <TextBlock Text="{Binding Barcode}" Width="100" FontWeight="Bold"/>
-                            <TextBlock Text="{Binding Name}" Width="200"/>
-                            <TextBlock Text="{Binding Price, StringFormat='Rs. {0:N2}'}" Width="100" Foreground="Green"/>
+            <Border Grid.Row="0" Background="White" CornerRadius="12" Padding="20" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,0,0,15">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Checkout Scanner" FontSize="22" FontWeight="Black" Foreground="#111827"/>
+                    
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBox Grid.Column="0" x:Name="BarcodeScannerInput" Watermark="Scan barcode or type here..." 
+                                 KeyDown="BarcodeScannerInput_KeyDown" FontSize="16" Padding="10" CornerRadius="6" Margin="0,0,10,0"/>
+                        
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="Qty:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Text="{Binding BillingQuantity}" KeyDown="BillingQuantityInput_KeyDown" Width="60" FontSize="16" Padding="10" CornerRadius="6"/>
                         </StackPanel>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-            
-            <Border Grid.Row="3" Background="#eee" Padding="20">
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="15">
-                    <TextBlock Text="Total:" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
-                    <TextBlock Text="{Binding BillTotal, StringFormat='Rs. {0:N2}'}" 
-                               FontSize="28" FontWeight="Bold" Foreground="Red" />
+                    </Grid>
+                    
+                    <TextBlock Text="{Binding ScanResultMessage}" FontSize="16" Foreground="#2563EB" FontWeight="SemiBold"/>
                 </StackPanel>
+            </Border>
+
+            <Border Grid.Row="1" Background="White" CornerRadius="12" Padding="20" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,0,0,15">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Current Bill" FontSize="18" FontWeight="Bold" Foreground="#374151" Margin="0,0,0,15"/>
+                    
+                    <ListBox ItemsSource="{Binding CurrentBill}" Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:CartItem">
+                                <Border BorderBrush="#F3F4F6" BorderThickness="0,0,0,1" Padding="5,10">
+                                    <Grid ColumnDefinitions="Auto, *, Auto, Auto, Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Item.Barcode}" Width="80" FontWeight="Bold" Foreground="#4B5563" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Item.Name}" FontSize="16" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Quantity, StringFormat='{}Qty: {0}'}" Width="70" Foreground="#4B5563" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding TotalPrice, StringFormat='Rs. {0:N2}'}" FontSize="16" FontWeight="Bold" Foreground="#059669" VerticalAlignment="Center"/>
+                                        <Button Grid.Column="4" x:CompileBindings="False" 
+                                                Command="{Binding $parent[Window].DataContext.RemoveFromCartCommand}" 
+                                                CommandParameter="{Binding}" 
+                                                Content="✕" Background="#FEE2E2" Foreground="#DC2626" FontSize="16" FontWeight="Black" 
+                                                Padding="10,5" Margin="10,0,0,0" CornerRadius="6" ToolTip.Tip="Remove from Bill"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+            
+            <Border Grid.Row="2" Background="#1F2937" CornerRadius="12" Padding="25">
+                <Grid ColumnDefinitions="*, Auto">
+                    <TextBlock Grid.Column="0" Text="Total Amount:" FontSize="20" FontWeight="SemiBold" Foreground="#D1D5DB" VerticalAlignment="Center"/>
+                    <TextBlock Grid.Column="1" Text="{Binding BillTotal, StringFormat='Rs. {0:N2}'}" FontSize="32" FontWeight="Black" Foreground="#10B981" VerticalAlignment="Center"/>
+                </Grid>
             </Border>
         </Grid>
 
-        <Border Grid.Column="1" Background="#f8f9fa" BorderBrush="#ddd" BorderThickness="1,0,0,0" Padding="20">
-            <StackPanel Spacing="15">
-                <TextBlock Text="Inventory Management" FontSize="20" FontWeight="Bold" />
+        <Border Grid.Column="1" Background="White" BorderBrush="#E5E7EB" BorderThickness="1,0,0,0" Padding="25">
+            <Grid RowDefinitions="Auto, *">
                 
-                <TextBlock Text="Barcode:" />
-                <TextBox Text="{Binding NewBarcode}" Watermark="e.g. 84127" />
+                <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,20">
+                    <TextBlock Text="Inventory Management" FontSize="22" FontWeight="Black" Foreground="#111827" Margin="0,0,0,5"/>
+                    
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="Barcode" FontSize="12" FontWeight="Bold" Foreground="#6B7280" />
+                            <TextBox Text="{Binding NewBarcode}" CornerRadius="6"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <TextBlock Text="Quantity" FontSize="12" FontWeight="Bold" Foreground="#6B7280" />
+                            <TextBox Text="{Binding NewQuantity}" CornerRadius="6"/>
+                        </StackPanel>
+                    </Grid>
 
-                <TextBlock Text="Product Name:" />
-                <TextBox Text="{Binding NewName}" Watermark="e.g. Samaposha 200g" />
+                    <TextBlock Text="Product Name" FontSize="12" FontWeight="Bold" Foreground="#6B7280" />
+                    <TextBox Text="{Binding NewName}" CornerRadius="6"/>
 
-                <TextBlock Text="Price (Rs):" />
-                <TextBox Text="{Binding NewPrice}" Watermark="e.g. 180.00" />
+                    <Grid ColumnDefinitions="*,*">
+                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
+                            <TextBlock Text="Price (Rs)" FontSize="12" FontWeight="Bold" Foreground="#6B7280" />
+                            <TextBox Text="{Binding NewPrice}" CornerRadius="6"/>
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
+                            <TextBlock Text="Expiration (Optional)" FontSize="12" FontWeight="Bold" Foreground="#6B7280" />
+                            <CalendarDatePicker SelectedDate="{Binding NewExpirationDate}" HorizontalAlignment="Stretch" CornerRadius="6" Watermark="Select Date"/>
+                        </StackPanel>
+                    </Grid>
 
-                <Button Content="Add to Database" 
-                        Command="{Binding AddNewProductCommand}" 
-                        Background="#007bff" Foreground="White" 
-                        HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
-                        Padding="10" Margin="0,10,0,0"/>
+                    <Grid ColumnDefinitions="*,*">
+                        <Button Grid.Column="0" Content="Save Product" Command="{Binding SaveProductCommand}" Background="#2563EB" Foreground="White" FontWeight="Bold" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" Margin="0,10,5,0"/>
+                        <Button Grid.Column="1" Content="Clear Form" Command="{Binding ClearFormCommand}" Background="#E5E7EB" Foreground="#374151" FontWeight="Bold" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" Margin="5,10,0,0"/>
+                    </Grid>
 
-                <TextBlock Text="{Binding AdminMessage}" 
-                           TextWrapping="Wrap" 
-                           Foreground="DarkOrange" 
-                           FontWeight="Bold"/>
-            </StackPanel>
+                    <TextBlock Text="{Binding AdminMessage}" TextWrapping="Wrap" Foreground="#D97706" FontWeight="SemiBold"/>
+                </StackPanel>
+
+                <DockPanel Grid.Row="1">
+                    <TextBlock DockPanel.Dock="Top" Text="Live Inventory" FontSize="18" FontWeight="Bold" Foreground="#374151" Margin="0,0,0,10"/>
+                    <TextBox DockPanel.Dock="Top" Text="{Binding SearchQuery}" Watermark="🔍 Search by name or barcode..." CornerRadius="6" Margin="0,0,0,15" Padding="8"/>
+
+                    <ListBox ItemsSource="{Binding InventoryList}" Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:Product">
+                                <Border Background="#F9FAFB" CornerRadius="8" Margin="0,0,0,8" Padding="12" BorderBrush="#E5E7EB" BorderThickness="1">
+                                    <StackPanel>
+                                        <Grid ColumnDefinitions="Auto, *, Auto, Auto">
+                                            <TextBlock Grid.Column="0" Text="{Binding Barcode}" Width="60" FontWeight="Bold" Foreground="#4B5563" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center" Margin="10,0" TextWrapping="Wrap"/>
+                                            <TextBlock Grid.Column="2" Text="{Binding Price, StringFormat='Rs. {0:N2}'}" Width="80" FontWeight="Bold" Foreground="#059669" VerticalAlignment="Center"/>
+                                            <Border Grid.Column="3" Background="#DBEAFE" CornerRadius="12" Padding="8,4" MinWidth="50">
+                                                <TextBlock Text="{Binding StockQuantity}" Foreground="#1E40AF" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                            </Border>
+                                        </Grid>
+                                        
+                                        <TextBlock Text="{Binding ExpirationDate, StringFormat='{}Expires: {0:MMM dd, yyyy}'}" 
+                                                   FontSize="12" Foreground="#EF4444" Margin="70,5,0,0" 
+                                                   IsVisible="{Binding ExpirationDate, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+
+                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
+                                            <Button x:CompileBindings="False" Content="To Bill" Command="{Binding $parent[Window].DataContext.AddDirectlyToCartCommand}" CommandParameter="{Binding}" Background="#10B981" Foreground="White" FontSize="12" Padding="8,4" CornerRadius="4"/>
+                                            <Button x:CompileBindings="False" Content="Edit" Command="{Binding $parent[Window].DataContext.EditProductCommand}" CommandParameter="{Binding}" Background="#F59E0B" Foreground="White" FontSize="12" Padding="8,4" CornerRadius="4"/>
+                                            <Button x:CompileBindings="False" Content="Del" Command="{Binding $parent[Window].DataContext.DeleteProductCommand}" CommandParameter="{Binding}" Background="#EF4444" Foreground="White" FontSize="12" Padding="8,4" CornerRadius="4"/>
+                                        </StackPanel>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+                
+            </Grid>
         </Border>
-
     </Grid>
 </Window>

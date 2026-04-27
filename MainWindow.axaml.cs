@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using StoreBillingDesktop.ViewModels; // Add this to see the ViewModel
+using StoreBillingDesktop.ViewModels;
 
 namespace StoreBillingDesktop;
 
@@ -9,8 +9,6 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        
-        // 🤝 THE HANDSHAKE: Tell the window to use MainViewModel for its data
         DataContext = new MainViewModel();
     }
 
@@ -18,17 +16,38 @@ public partial class MainWindow : Window
     {
         if (e.Key == Key.Enter)
         {
-            var textBox = (TextBox)sender!;
-            string scannedCode = textBox.Text?.Trim() ?? "";
+            ProcessScan();
+        }
+    }
 
-            if (!string.IsNullOrEmpty(scannedCode))
+    // NEW: Handles the Enter key press from the Quantity box
+    private void BillingQuantityInput_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            ProcessScan();
+        }
+    }
+
+    // SHARED LOGIC: We pull this into its own method so we don't duplicate code
+    private void ProcessScan()
+    {
+        // Explicitly grab the barcode text box from the UI
+        var barcodeBox = this.FindControl<TextBox>("BarcodeScannerInput");
+        string scannedCode = barcodeBox?.Text?.Trim() ?? "";
+
+        if (!string.IsNullOrEmpty(scannedCode))
+        {
+            var viewModel = (MainViewModel)DataContext!;
+            viewModel.ProcessBarcode(scannedCode);
+            
+            if (barcodeBox != null)
             {
-                // Grab the ViewModel and tell it to do the heavy lifting
-                var viewModel = (MainViewModel)DataContext!;
-                viewModel.ProcessBarcode(scannedCode);
+                // Clear the barcode box for the next item
+                barcodeBox.Text = "";
                 
-                // Clear the box for the next item
-                textBox.Text = "";
+                // Instantly throw the blinking cursor back into the scanner box!
+                barcodeBox.Focus(); 
             }
         }
     }

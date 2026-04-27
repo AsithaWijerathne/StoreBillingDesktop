@@ -35,10 +35,10 @@ class Program
 
             var dummyProducts = new[]
             {
-                new Product { Barcode = "84123", Name = "Samba Rice 1kg", Price = 260.00m },
-                new Product { Barcode = "84124", Name = "Munchee Super Cream Cracker", Price = 150.00m },
-                new Product { Barcode = "84125", Name = "Anchor Milk Powder 400g", Price = 1150.00m },
-                new Product { Barcode = "84126", Name = "Dilmah Tea 200g", Price = 420.00m }
+                new Product { Barcode = "84123", Name = "Samba Rice 1kg", Price = 260.00m, StockQuantity = 50.0m },
+                new Product { Barcode = "84124", Name = "Munchee Super Cream Cracker", Price = 150.00m, StockQuantity = 50.0m },
+                new Product { Barcode = "84125", Name = "Anchor Milk Powder 400g", Price = 1150.00m, StockQuantity = 50.0m, ExpirationDate = new DateTime(2026, 12, 31) },
+                new Product { Barcode = "84126", Name = "Dilmah Tea 200g", Price = 420.00m, StockQuantity = 50.0m }
             };
 
             db.Products.AddRange(dummyProducts);
