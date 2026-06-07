@@ -1,0 +1,57 @@
+<UserControl 
+ xmlns="https://github.com/avaloniaui"
+ xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+ xmlns:vm="using:StoreBillingDesktop.ViewModels"
+ xmlns:models="using:StoreBillingDesktop.Models"
+ x:DataType="vm:MainViewModel"
+ x:Class="StoreBillingDesktop.Views.SettingsView">
+
+    <StackPanel Spacing="30">
+        <TextBlock Text="System Settings" FontSize="32" FontWeight="Black" Foreground="#111827"/>
+        
+        <Border Background="White" CornerRadius="12" Padding="30" BorderBrush="#E5E7EB" BorderThickness="1">
+            <StackPanel Spacing="25">
+                <TextBlock Text="Application Modules" FontSize="20" FontWeight="Bold" Foreground="#4B5563" Margin="0,0,0,10"/>
+                
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Customer Loyalty System" FontSize="18" FontWeight="Black" Foreground="#111827"/>
+                        <TextBlock Text="Enable phone number lookup and points tracking at checkout." Foreground="#6B7280" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsLoyaltyEnabled}" OnContent="ON" OffContent="OFF"/>
+                </Grid>
+                
+                <Border BorderBrush="#F3F4F6" BorderThickness="0,1,0,0"/>
+
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Discount Module" FontSize="18" FontWeight="Black" Foreground="#111827"/>
+                        <TextBlock Text="Allow cashiers to apply percentage discounts to the total bill." Foreground="#6B7280" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsDiscountEnabled}" OnContent="ON" OffContent="OFF"/>
+                </Grid>
+
+                <Border BorderBrush="#F3F4F6" BorderThickness="0,1,0,0"/>
+
+                <Grid ColumnDefinitions="*, Auto">
+                    <StackPanel Grid.Column="0">
+                        <TextBlock Text="Tax / VAT Calculation" FontSize="18" FontWeight="Black" Foreground="#111827"/>
+                        <TextBlock Text="Enable the tax calculation box on the checkout screen." Foreground="#6B7280" TextWrapping="Wrap"/>
+                    </StackPanel>
+                    <ToggleSwitch Grid.Column="1" IsChecked="{Binding IsTaxEnabled}" OnContent="ON" OffContent="OFF"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <Border Background="White" CornerRadius="12" Padding="30" BorderBrush="#E5E7EB" BorderThickness="1">
+            <StackPanel Spacing="15">
+                <TextBlock Text="Data Management" FontSize="20" FontWeight="Bold" Foreground="#4B5563"/>
+                <TextBlock Text="Create a secure backup of your entire SQLite database to prevent data loss." Foreground="#6B7280" TextWrapping="Wrap" Margin="0,0,0,10"/>
+                <Button Content="💾 Run Database Backup" Command="{Binding BackupDatabaseCommand}" Background="#059669" Foreground="White" FontSize="16" FontWeight="Bold" Padding="20,15" CornerRadius="8" HorizontalAlignment="Left"/>
+                <TextBlock Text="{Binding ScanResultMessage}" FontWeight="SemiBold" Foreground="#2563EB" Margin="0,10,0,0"/>
+            </StackPanel>
+        </Border>
+
+    </StackPanel>
+
+</UserControl>

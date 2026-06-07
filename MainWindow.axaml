@@ -2,11 +2,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:models="using:StoreBillingDesktop.Models"
         xmlns:vm="using:StoreBillingDesktop.ViewModels" 
+        xmlns:views="using:StoreBillingDesktop.Views" 
         x:DataType="vm:MainViewModel" 
         x:Class="StoreBillingDesktop.MainWindow"
-        Title="Modern POS System" Width="1150" Height="750"
-        MinWidth="1100" MinHeight="700" 
-        Background="#F4F6F8">
+        Title="Modern POS System" Width="1250" Height="800"
+        MinWidth="1100" MinHeight="700" Background="#F4F6F8">
 
     <Window.Styles>
         <Style Selector="Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
@@ -15,136 +15,42 @@
         </Style>
     </Window.Styles>
 
-    <Grid ColumnDefinitions="55*, 45*" Margin="10">
-        
-        <Grid Grid.Column="0" RowDefinitions="Auto, *, Auto" Margin="10">
-            
-            <Border Grid.Row="0" Background="White" CornerRadius="12" Padding="20" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,0,0,15">
-                <StackPanel Spacing="12">
-                    <TextBlock Text="Checkout Scanner" FontSize="22" FontWeight="Black" Foreground="#111827"/>
-                    
-                    <Grid ColumnDefinitions="*, Auto">
-                        <TextBox Grid.Column="0" x:Name="BarcodeScannerInput" Watermark="Scan barcode or type here..." 
-                                 KeyDown="BarcodeScannerInput_KeyDown" FontSize="16" Padding="10" CornerRadius="6" Margin="0,0,10,0"/>
-                        
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
-                            <TextBlock Text="Qty:" VerticalAlignment="Center" FontWeight="Bold"/>
-                            <TextBox Text="{Binding BillingQuantity}" KeyDown="BillingQuantityInput_KeyDown" Width="60" FontSize="16" Padding="10" CornerRadius="6"/>
-                        </StackPanel>
-                    </Grid>
-                    
-                    <TextBlock Text="{Binding ScanResultMessage}" FontSize="16" Foreground="#2563EB" FontWeight="SemiBold"/>
+    <Grid>
+        <Grid IsVisible="{Binding !IsLoggedIn}" ZIndex="1000" Background="#111827">
+            <Border Background="White" Width="400" CornerRadius="16" Padding="40" HorizontalAlignment="Center" VerticalAlignment="Center" BoxShadow="0 25 50 -12 #55000000">
+                <StackPanel Spacing="20">
+                    <TextBlock Text="🔒 System Locked" FontSize="28" FontWeight="Black" Foreground="#111827" HorizontalAlignment="Center"/>
+                    <TextBlock Text="{Binding LoginMessage}" FontSize="14" FontWeight="SemiBold" Foreground="#4B5563" HorizontalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center"/>
+                    <TextBox Text="{Binding LoginPin}" KeyDown="LoginPinInput_KeyDown" PasswordChar="•" FontSize="24" FontWeight="Black" Padding="15" CornerRadius="8" Watermark="Enter PIN..." HorizontalContentAlignment="Center"/>
+                    <Button Content="Unlock Terminal" Command="{Binding LoginCommand}" Background="#2563EB" Foreground="White" FontSize="18" FontWeight="Bold" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15"/>
+                    <TextBlock Text="Admin: 1234 | Cashier: 0000" FontSize="12" Foreground="#9CA3AF" HorizontalAlignment="Center" Margin="0,10,0,0"/>
                 </StackPanel>
-            </Border>
-
-            <Border Grid.Row="1" Background="White" CornerRadius="12" Padding="20" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,0,0,15">
-                <DockPanel>
-                    <TextBlock DockPanel.Dock="Top" Text="Current Bill" FontSize="18" FontWeight="Bold" Foreground="#374151" Margin="0,0,0,15"/>
-                    
-                    <ListBox ItemsSource="{Binding CurrentBill}" Background="Transparent" BorderThickness="0">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="models:CartItem">
-                                <Border BorderBrush="#F3F4F6" BorderThickness="0,0,0,1" Padding="5,10">
-                                    <Grid ColumnDefinitions="Auto, *, Auto, Auto, Auto">
-                                        <TextBlock Grid.Column="0" Text="{Binding Item.Barcode}" Width="80" FontWeight="Bold" Foreground="#4B5563" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding Item.Name}" FontSize="16" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding Quantity, StringFormat='{}Qty: {0}'}" Width="70" Foreground="#4B5563" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="3" Text="{Binding TotalPrice, StringFormat='Rs. {0:N2}'}" FontSize="16" FontWeight="Bold" Foreground="#059669" VerticalAlignment="Center"/>
-                                        <Button Grid.Column="4" x:CompileBindings="False" 
-                                                Command="{Binding $parent[Window].DataContext.RemoveFromCartCommand}" 
-                                                CommandParameter="{Binding}" 
-                                                Content="✕" Background="#FEE2E2" Foreground="#DC2626" FontSize="16" FontWeight="Black" 
-                                                Padding="10,5" Margin="10,0,0,0" CornerRadius="6" ToolTip.Tip="Remove from Bill"/>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
-                </DockPanel>
-            </Border>
-            
-            <Border Grid.Row="2" Background="#1F2937" CornerRadius="12" Padding="25">
-                <Grid ColumnDefinitions="*, Auto">
-                    <TextBlock Grid.Column="0" Text="Total Amount:" FontSize="20" FontWeight="SemiBold" Foreground="#D1D5DB" VerticalAlignment="Center"/>
-                    <TextBlock Grid.Column="1" Text="{Binding BillTotal, StringFormat='Rs. {0:N2}'}" FontSize="32" FontWeight="Black" Foreground="#10B981" VerticalAlignment="Center"/>
-                </Grid>
             </Border>
         </Grid>
 
-        <Border Grid.Column="1" Background="White" BorderBrush="#E5E7EB" BorderThickness="1,0,0,0" Padding="25">
-            <Grid RowDefinitions="Auto, *">
-                
-                <StackPanel Grid.Row="0" Spacing="10" Margin="0,0,0,20">
-                    <TextBlock Text="Inventory Management" FontSize="22" FontWeight="Black" Foreground="#111827" Margin="0,0,0,5"/>
-                    
-                    <Grid ColumnDefinitions="*,*">
-                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                            <TextBlock Text="Barcode" FontSize="12" FontWeight="Bold" Foreground="#6B7280" />
-                            <TextBox Text="{Binding NewBarcode}" CornerRadius="6"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                            <TextBlock Text="Quantity" FontSize="12" FontWeight="Bold" Foreground="#6B7280" />
-                            <TextBox Text="{Binding NewQuantity}" CornerRadius="6"/>
-                        </StackPanel>
-                    </Grid>
+        <Grid ColumnDefinitions="250, *" IsVisible="{Binding IsLoggedIn}">
+            
+            <Border Grid.Column="0" Background="#1F2937" Padding="20">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="ASITHA POS" FontSize="24" FontWeight="Black" Foreground="White" Margin="0,0,0,30" HorizontalAlignment="Center"/>
+                    <Button DockPanel.Dock="Bottom" Content="Log Out" Command="{Binding LogoutCommand}" Background="#EF4444" Foreground="White" FontSize="16" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15" CornerRadius="8"/>
 
-                    <TextBlock Text="Product Name" FontSize="12" FontWeight="Bold" Foreground="#6B7280" />
-                    <TextBox Text="{Binding NewName}" CornerRadius="6"/>
-
-                    <Grid ColumnDefinitions="*,*">
-                        <StackPanel Grid.Column="0" Margin="0,0,8,0">
-                            <TextBlock Text="Price (Rs)" FontSize="12" FontWeight="Bold" Foreground="#6B7280" />
-                            <TextBox Text="{Binding NewPrice}" CornerRadius="6"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Margin="8,0,0,0">
-                            <TextBlock Text="Expiration (Optional)" FontSize="12" FontWeight="Bold" Foreground="#6B7280" />
-                            <CalendarDatePicker SelectedDate="{Binding NewExpirationDate}" HorizontalAlignment="Stretch" CornerRadius="6" Watermark="Select Date"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <Grid ColumnDefinitions="*,*">
-                        <Button Grid.Column="0" Content="Save Product" Command="{Binding SaveProductCommand}" Background="#2563EB" Foreground="White" FontWeight="Bold" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" Margin="0,10,5,0"/>
-                        <Button Grid.Column="1" Content="Clear Form" Command="{Binding ClearFormCommand}" Background="#E5E7EB" Foreground="#374151" FontWeight="Bold" CornerRadius="8" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" Margin="5,10,0,0"/>
-                    </Grid>
-
-                    <TextBlock Text="{Binding AdminMessage}" TextWrapping="Wrap" Foreground="#D97706" FontWeight="SemiBold"/>
-                </StackPanel>
-
-                <DockPanel Grid.Row="1">
-                    <TextBlock DockPanel.Dock="Top" Text="Live Inventory" FontSize="18" FontWeight="Bold" Foreground="#374151" Margin="0,0,0,10"/>
-                    <TextBox DockPanel.Dock="Top" Text="{Binding SearchQuery}" Watermark="🔍 Search by name or barcode..." CornerRadius="6" Margin="0,0,0,15" Padding="8"/>
-
-                    <ListBox ItemsSource="{Binding InventoryList}" Background="Transparent" BorderThickness="0">
-                        <ListBox.ItemTemplate>
-                            <DataTemplate x:DataType="models:Product">
-                                <Border Background="#F9FAFB" CornerRadius="8" Margin="0,0,0,8" Padding="12" BorderBrush="#E5E7EB" BorderThickness="1">
-                                    <StackPanel>
-                                        <Grid ColumnDefinitions="Auto, *, Auto, Auto">
-                                            <TextBlock Grid.Column="0" Text="{Binding Barcode}" Width="60" FontWeight="Bold" Foreground="#4B5563" VerticalAlignment="Center"/>
-                                            <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center" Margin="10,0" TextWrapping="Wrap"/>
-                                            <TextBlock Grid.Column="2" Text="{Binding Price, StringFormat='Rs. {0:N2}'}" Width="80" FontWeight="Bold" Foreground="#059669" VerticalAlignment="Center"/>
-                                            <Border Grid.Column="3" Background="#DBEAFE" CornerRadius="12" Padding="8,4" MinWidth="50">
-                                                <TextBlock Text="{Binding StockQuantity}" Foreground="#1E40AF" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                        </Grid>
-                                        
-                                        <TextBlock Text="{Binding ExpirationDate, StringFormat='{}Expires: {0:MMM dd, yyyy}'}" 
-                                                   FontSize="12" Foreground="#EF4444" Margin="70,5,0,0" 
-                                                   IsVisible="{Binding ExpirationDate, Converter={x:Static ObjectConverters.IsNotNull}}"/>
-
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
-                                            <Button x:CompileBindings="False" Content="To Bill" Command="{Binding $parent[Window].DataContext.AddDirectlyToCartCommand}" CommandParameter="{Binding}" Background="#10B981" Foreground="White" FontSize="12" Padding="8,4" CornerRadius="4"/>
-                                            <Button x:CompileBindings="False" Content="Edit" Command="{Binding $parent[Window].DataContext.EditProductCommand}" CommandParameter="{Binding}" Background="#F59E0B" Foreground="White" FontSize="12" Padding="8,4" CornerRadius="4"/>
-                                            <Button x:CompileBindings="False" Content="Del" Command="{Binding $parent[Window].DataContext.DeleteProductCommand}" CommandParameter="{Binding}" Background="#EF4444" Foreground="White" FontSize="12" Padding="8,4" CornerRadius="4"/>
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ListBox.ItemTemplate>
-                    </ListBox>
+                    <StackPanel Spacing="10">
+                        <Button Content="🏠 Register" Command="{Binding NavigateCommand}" CommandParameter="Home" Background="{Binding HomeNavColor}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Stretch" Padding="15" CornerRadius="8" />
+                        <Button Content="📊 Sales Reports" IsVisible="{Binding IsAdmin}" Command="{Binding NavigateCommand}" CommandParameter="Reports" Background="{Binding ReportsNavColor}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Stretch" Padding="15" CornerRadius="8"/>
+                        <Button Content="⚙️ Settings" IsVisible="{Binding IsAdmin}" Command="{Binding NavigateCommand}" CommandParameter="Settings" Background="{Binding SettingsNavColor}" Foreground="White" FontSize="18" FontWeight="Bold" HorizontalAlignment="Stretch" Padding="15" CornerRadius="8"/>
+                    </StackPanel>
                 </DockPanel>
+            </Border>
+
+            <Grid Grid.Column="1" Background="#F4F6F8" Margin="10">
+                
+                <views:HomeView IsVisible="{Binding IsHomeViewOpen}" />
+                <views:ReportsView IsVisible="{Binding IsReportsViewOpen}" />
+                <views:SettingsView IsVisible="{Binding IsSettingsViewOpen}" />
                 
             </Grid>
-        </Border>
-    </Grid>
+        </Grid>
+
+        </Grid>
 </Window>

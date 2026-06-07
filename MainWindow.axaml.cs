@@ -12,23 +12,6 @@ public partial class MainWindow : Window
         DataContext = new MainViewModel();
     }
 
-    private void BarcodeScannerInput_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-        {
-            ProcessScan();
-        }
-    }
-
-    // NEW: Handles the Enter key press from the Quantity box
-    private void BillingQuantityInput_KeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter)
-        {
-            ProcessScan();
-        }
-    }
-
     // SHARED LOGIC: We pull this into its own method so we don't duplicate code
     private void ProcessScan()
     {
@@ -40,15 +23,24 @@ public partial class MainWindow : Window
         {
             var viewModel = (MainViewModel)DataContext!;
             viewModel.ProcessBarcode(scannedCode);
-            
+
             if (barcodeBox != null)
             {
                 // Clear the barcode box for the next item
                 barcodeBox.Text = "";
-                
+
                 // Instantly throw the blinking cursor back into the scanner box!
-                barcodeBox.Focus(); 
+                barcodeBox.Focus();
             }
+        }
+    }
+    
+    private void LoginPinInput_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key == Key.Enter)
+        {
+            var viewModel = (MainViewModel)DataContext!;
+            viewModel.Login();
         }
     }
 }

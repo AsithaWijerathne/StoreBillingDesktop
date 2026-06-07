@@ -1,0 +1,128 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:models="using:StoreBillingDesktop.Models"
+             xmlns:vm="using:StoreBillingDesktop.ViewModels" 
+             x:DataType="vm:MainViewModel"
+             x:Class="StoreBillingDesktop.Views.HomeView">
+
+    <Grid ColumnDefinitions="55*, 45*" Margin="10">
+        
+        <Grid Grid.Column="0" RowDefinitions="Auto, *, Auto" Margin="10">
+            
+            <Border Grid.Row="0" Background="White" CornerRadius="12" Padding="20" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,0,0,15">
+                <StackPanel Spacing="12">
+                    <TextBlock Text="Checkout Scanner" FontSize="22" FontWeight="Black" Foreground="#111827"/>
+                    <Grid ColumnDefinitions="*, Auto">
+                        <TextBox Grid.Column="0" x:Name="BarcodeScannerInput" Watermark="Scan barcode or type here..." KeyDown="BarcodeScannerInput_KeyDown" FontSize="16" Padding="10" CornerRadius="6" Margin="0,0,10,0"/>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
+                            <TextBlock Text="Qty:" VerticalAlignment="Center" FontWeight="Bold"/>
+                            <TextBox Text="{Binding BillingQuantity}" KeyDown="BillingQuantityInput_KeyDown" Width="60" FontSize="16" Padding="10" CornerRadius="6"/>
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Text="{Binding ScanResultMessage}" FontSize="16" Foreground="#2563EB" FontWeight="SemiBold"/>
+                </StackPanel>
+            </Border>
+
+            <Border Grid.Row="1" Background="White" CornerRadius="12" Padding="20" BorderBrush="#E5E7EB" BorderThickness="1" Margin="0,0,0,15">
+                <DockPanel>
+                    <TextBlock DockPanel.Dock="Top" Text="Current Bill" FontSize="18" FontWeight="Bold" Foreground="#374151" Margin="0,0,0,15"/>
+                    <ListBox ItemsSource="{Binding CurrentBill}" Background="Transparent" BorderThickness="0">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="models:CartItem">
+                                <Border BorderBrush="#F3F4F6" BorderThickness="0,0,0,1" Padding="5,10">
+                                    <Grid ColumnDefinitions="Auto, *, Auto, Auto, Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Item.Barcode}" Width="80" FontWeight="Bold" Foreground="#4B5563" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Item.Name}" FontSize="16" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Quantity, StringFormat='{}Qty: {0}'}" Width="70" Foreground="#4B5563" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="3" Text="{Binding TotalPrice, StringFormat='Rs. {0:N2}'}" FontSize="16" FontWeight="Bold" Foreground="#059669" VerticalAlignment="Center"/>
+                                        
+                                        <Button Grid.Column="4" x:CompileBindings="False" Command="{Binding $parent[UserControl].DataContext.RemoveFromCartCommand}" CommandParameter="{Binding}" Content="✕" Background="#FEE2E2" Foreground="#DC2626" FontSize="16" FontWeight="Black" Padding="10,5" Margin="10,0,0,0" CornerRadius="6"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
+            </Border>
+            
+            <StackPanel Grid.Row="2" Spacing="10">
+                <Border Background="#1F2937" CornerRadius="12" Padding="20">
+                    <StackPanel Spacing="8">
+                        <Grid ColumnDefinitions="*, Auto" IsVisible="{Binding IsDiscountEnabled}">
+                            <TextBlock Grid.Column="0" Text="Subtotal:" FontSize="14" Foreground="#9CA3AF" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding SubTotal, StringFormat='Rs. {0:N2}'}" FontSize="16" FontWeight="Bold" Foreground="#D1D5DB" VerticalAlignment="Center"/>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *, Auto" IsVisible="{Binding IsDiscountEnabled}">
+                            <TextBlock Grid.Column="0" Text="Discount %:" FontSize="14" Foreground="#9CA3AF" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <NumericUpDown Grid.Column="1" Value="{Binding DiscountPercentage}" Minimum="0" Maximum="100" FormatString="0.0" Height="30" Padding="5" CornerRadius="4" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="{Binding DiscountAmount, StringFormat='- Rs. {0:N2}'}" FontSize="14" FontWeight="Bold" Foreground="#F87171" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </Grid>
+
+                        <Grid ColumnDefinitions="Auto, *, Auto" IsVisible="{Binding IsTaxEnabled}">
+                            <TextBlock Grid.Column="0" Text="Tax (VAT) %:" FontSize="14" Foreground="#9CA3AF" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <NumericUpDown Grid.Column="1" Value="{Binding TaxPercentage}" Minimum="0" Maximum="100" FormatString="0.0" Height="30" Padding="5" CornerRadius="4" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="2" Text="{Binding TaxAmount, StringFormat='+ Rs. {0:N2}'}" FontSize="14" FontWeight="Bold" Foreground="#60A5FA" VerticalAlignment="Center" Margin="10,0,0,0"/>
+                        </Grid>
+
+                        <Border BorderBrush="#374151" BorderThickness="0,1,0,0" Margin="0,5"/>
+
+                        <Grid ColumnDefinitions="*, Auto">
+                            <TextBlock Grid.Column="0" Text="GRAND TOTAL:" FontSize="20" FontWeight="Black" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="{Binding BillTotal, StringFormat='Rs. {0:N2}'}" FontSize="32" FontWeight="Black" Foreground="#10B981" VerticalAlignment="Center"/>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+                
+                <Grid ColumnDefinitions="*,*" RowDefinitions="Auto, Auto">
+                    <Button Grid.Row="0" Grid.Column="0" Content="⏸️ Suspend Bill" Command="{Binding SuspendCurrentBillCommand}" Background="#F59E0B" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" Margin="0,0,5,10" CornerRadius="8"/>
+                    <Button Grid.Row="0" Grid.Column="1" Content="{Binding SuspendedBills.Count, StringFormat='📂 Parked Bills ({0})'}" Command="{Binding OpenSuspendedBillsCommand}" Background="#6B7280" Foreground="White" FontSize="14" FontWeight="Bold" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="12" Margin="5,0,0,10" CornerRadius="8"/>
+                    <Button Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Content="Checkout Sale" Command="{Binding OpenPaymentCommand}" Background="#10B981" Foreground="White" FontSize="20" FontWeight="Black" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Padding="15" CornerRadius="12" />
+                </Grid>
+            </StackPanel>
+        </Grid>
+
+        <Border Grid.Column="1" Background="White" BorderBrush="#E5E7EB" BorderThickness="1,0,0,0" Padding="25">
+            <DockPanel>
+                
+                <Grid DockPanel.Dock="Top" ColumnDefinitions="*, Auto, Auto" Margin="0,0,0,15">
+                    <TextBlock Grid.Column="0" Text="Live Inventory" FontSize="22" FontWeight="Black" Foreground="#111827" VerticalAlignment="Center"/>
+                    <Button Grid.Column="1" Content="{Binding AlertCount, StringFormat='🔔 Alerts ({0})'}" Command="{Binding OpenAlertsCommand}" Background="{Binding AlertButtonColor}" Foreground="White" FontWeight="Bold" Padding="15,8" CornerRadius="6" Margin="0,0,10,0"/>
+                    <Button Grid.Column="2" Content="+ Add New" IsVisible="{Binding IsAdmin}" Command="{Binding OpenNewProductFormCommand}" Background="#2563EB" Foreground="White" FontWeight="Bold" Padding="15,8" CornerRadius="6"/>
+                </Grid>
+                
+                <TextBox DockPanel.Dock="Top" Text="{Binding SearchQuery}" Watermark="🔍 Search by name or barcode..." CornerRadius="6" Margin="0,0,0,15" Padding="8"/>
+
+                <ListBox ItemsSource="{Binding InventoryList}" Background="Transparent" BorderThickness="0">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="models:Product">
+                            <Border Background="#F9FAFB" CornerRadius="8" Margin="0,0,0,8" Padding="12" BorderBrush="#E5E7EB" BorderThickness="1">
+                                <StackPanel>
+                                    <Grid ColumnDefinitions="Auto, *, Auto, Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding Barcode}" Width="60" FontWeight="Bold" Foreground="#4B5563" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding Name}" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center" Margin="10,0" TextWrapping="Wrap"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding Price, StringFormat='Rs. {0:N2}'}" Width="80" FontWeight="Bold" Foreground="#059669" VerticalAlignment="Center"/>
+                                        <Border Grid.Column="3" Background="#DBEAFE" CornerRadius="12" Padding="8,4" MinWidth="50">
+                                            <TextBlock Text="{Binding StockQuantity}" Foreground="#1E40AF" FontWeight="Bold" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </Grid>
+                                    
+                                    <TextBlock Text="{Binding ExpirationDate, StringFormat='{}Expires: {0:MMM dd, yyyy}'}" FontSize="12" Foreground="#EF4444" Margin="70,5,0,0" IsVisible="{Binding ExpirationDate, Converter={x:Static ObjectConverters.IsNotNull}}"/>
+                                    
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,10,0,0">
+                                        <Button x:CompileBindings="False" Content="To Bill" Command="{Binding $parent[UserControl].DataContext.AddDirectlyToCartCommand}" CommandParameter="{Binding}" Background="#10B981" Foreground="White" FontSize="12" Padding="8,4" CornerRadius="4"/>
+                                        <Button x:CompileBindings="False" Content="Edit" IsVisible="{Binding $parent[UserControl].DataContext.IsAdmin}" Command="{Binding $parent[UserControl].DataContext.EditProductCommand}" CommandParameter="{Binding}" Background="#F59E0B" Foreground="White" FontSize="12" Padding="8,4" CornerRadius="4"/>
+                                        <Button x:CompileBindings="False" Content="Del" IsVisible="{Binding $parent[UserControl].DataContext.IsAdmin}" Command="{Binding $parent[UserControl].DataContext.DeleteProductCommand}" CommandParameter="{Binding}" Background="#EF4444" Foreground="White" FontSize="12" Padding="8,4" CornerRadius="4"/>
+                                    </StackPanel>
+                                    
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                
+            </DockPanel>
+        </Border>
+        
+    </Grid>
+</UserControl>
