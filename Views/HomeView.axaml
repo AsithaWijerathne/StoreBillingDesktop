@@ -14,10 +14,6 @@
                     <TextBlock Text="Checkout Scanner" FontSize="22" FontWeight="Black" Foreground="#111827"/>
                     <Grid ColumnDefinitions="*, Auto">
                         <TextBox Grid.Column="0" x:Name="BarcodeScannerInput" Watermark="Scan barcode or type here..." KeyDown="BarcodeScannerInput_KeyDown" FontSize="16" Padding="10" CornerRadius="6" Margin="0,0,10,0"/>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="5">
-                            <TextBlock Text="Qty:" VerticalAlignment="Center" FontWeight="Bold"/>
-                            <TextBox Text="{Binding BillingQuantity}" KeyDown="BillingQuantityInput_KeyDown" Width="60" FontSize="16" Padding="10" CornerRadius="6"/>
-                        </StackPanel>
                     </Grid>
                     <TextBlock Text="{Binding ScanResultMessage}" FontSize="16" Foreground="#2563EB" FontWeight="SemiBold"/>
                 </StackPanel>
@@ -33,7 +29,7 @@
                                     <Grid ColumnDefinitions="Auto, *, Auto, Auto, Auto">
                                         <TextBlock Grid.Column="0" Text="{Binding Item.Barcode}" Width="80" FontWeight="Bold" Foreground="#4B5563" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="1" Text="{Binding Item.Name}" FontSize="16" FontWeight="Bold" Foreground="Black" VerticalAlignment="Center" TextWrapping="Wrap" Margin="0,0,10,0"/>
-                                        <TextBlock Grid.Column="2" Text="{Binding Quantity, StringFormat='{}Qty: {0}'}" Width="70" Foreground="#4B5563" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="2" Text="{Binding DisplayUnit}" Width="80" FontWeight="Bold" Foreground="#2563EB" VerticalAlignment="Center"/>
                                         <TextBlock Grid.Column="3" Text="{Binding TotalPrice, StringFormat='Rs. {0:N2}'}" FontSize="16" FontWeight="Bold" Foreground="#059669" VerticalAlignment="Center"/>
                                         
                                         <Button Grid.Column="4" x:CompileBindings="False" Command="{Binding $parent[UserControl].DataContext.RemoveFromCartCommand}" CommandParameter="{Binding}" Content="✕" Background="#FEE2E2" Foreground="#DC2626" FontSize="16" FontWeight="Black" Padding="10,5" Margin="10,0,0,0" CornerRadius="6"/>

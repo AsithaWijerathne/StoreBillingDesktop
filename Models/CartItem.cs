@@ -8,15 +8,19 @@ public partial class CartItem : ObservableObject
     public Product Item { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(TotalPrice))] // Magically updates the total price text!
+    [NotifyPropertyChangedFor(nameof(TotalPrice))] // updates the total price text!
     private decimal _quantity;
 
-    // A read-only property that calculates the cost on the fly
     public decimal TotalPrice => Item.Price * Quantity;
 
-    public CartItem(Product item, decimal quantity)
+    public string DisplayUnit { get; set; } = "";
+
+    public CartItem() { }
+
+    public CartItem(Product item, decimal quantity, string displayUnit)
     {
         Item = item;
         Quantity = quantity;
+        DisplayUnit = displayUnit;
     }
 }

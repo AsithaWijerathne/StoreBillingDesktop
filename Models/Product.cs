@@ -10,4 +10,5 @@ public class Product
     public decimal Price { get; set; }
     public decimal StockQuantity { get; set; }
     public DateTime? ExpirationDate { get; set; }
+    public string BaseUnit { get; set; } = "Unit";
 }

@@ -8,6 +8,8 @@ using System.IO;
 using Microsoft.EntityFrameworkCore;
 using StoreBillingDesktop.Data;
 using StoreBillingDesktop.Models;
+using System.Text.Json;
+using System.Collections.Generic;
 
 namespace StoreBillingDesktop.ViewModels;
 
@@ -53,6 +55,15 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private string _customerDetails = "No customer selected.";
     private Customer? _currentCustomer = null; 
 
+    public string[] UnitTypes { get; } = { "Unit", "Kg", "L" };
+    [ObservableProperty] private string _newBaseUnit = "Unit";
+
+    [ObservableProperty] private bool _isQuantityPromptOpen = false;
+    [ObservableProperty] private Product? _promptProduct;
+    [ObservableProperty] private string _promptInputQuantity = "1";
+    [ObservableProperty] private string _promptSelectedUnit = "";
+    public ObservableCollection<string> PromptAvailableUnits { get; } = new();
+
     // --- FORMS & POP-UPS ---
     [ObservableProperty] private string _newBarcode = "";
     [ObservableProperty] private string _newName = "";
@@ -77,7 +88,53 @@ public partial class MainViewModel : ObservableObject
     [ObservableProperty] private bool _hasAlerts = false;
     [ObservableProperty] private string _alertButtonColor = "#9CA3AF";
 
-    public MainViewModel() { RefreshInventory(); }
+    public MainViewModel()
+    {
+        LoadSettings();
+        LoadParkedBills();
+        RefreshInventory();
+    }
+    
+    // --- PERSISTENCE & DATA SAVING ---
+    private void LoadSettings()
+    {
+        if (File.Exists("settings.json"))
+        {
+            try {
+                var json = File.ReadAllText("settings.json");
+                var settings = JsonSerializer.Deserialize<Dictionary<string, bool>>(json);
+                if (settings != null) {
+                    if (settings.ContainsKey("Loyalty")) IsLoyaltyEnabled = settings["Loyalty"];
+                    if (settings.ContainsKey("Discount")) IsDiscountEnabled = settings["Discount"];
+                    if (settings.ContainsKey("Tax")) IsTaxEnabled = settings["Tax"];
+                }
+            } catch { } // If file is corrupted, it just uses the defaults
+        }
+    }
+
+    private void SaveSettings()
+    {
+        var settings = new Dictionary<string, bool> {
+            { "Loyalty", IsLoyaltyEnabled },
+            { "Discount", IsDiscountEnabled },
+            { "Tax", IsTaxEnabled }
+        };
+        File.WriteAllText("settings.json", JsonSerializer.Serialize(settings));
+    }
+
+    private void SaveParkedBills() => File.WriteAllText("parked_bills.json", JsonSerializer.Serialize(SuspendedBills));
+
+    private void LoadParkedBills()
+    {
+        if (File.Exists("parked_bills.json"))
+        {
+            try {
+                var json = File.ReadAllText("parked_bills.json");
+                var loaded = JsonSerializer.Deserialize<ObservableCollection<SuspendedCart>>(json);
+                if (loaded != null) foreach (var cart in loaded) SuspendedBills.Add(cart);
+            } catch { }
+        }
+    }
 
     // --- NEW: SIDEBAR NAVIGATION LOGIC ---
     [RelayCommand]
@@ -108,11 +165,18 @@ public partial class MainViewModel : ObservableObject
     // --- SETTINGS TRIGGERS ---
     partial void OnIsLoyaltyEnabledChanged(bool value)
     {
+        SaveSettings();
         if (!value) { CustomerPhone = ""; CustomerDetails = "System disabled."; _currentCustomer = null; }
         else { CustomerDetails = "No customer selected."; }
     }
-    partial void OnIsDiscountEnabledChanged(bool value) { if(!value) DiscountPercentage = 0; RecalculateTotal(); }
-    partial void OnIsTaxEnabledChanged(bool value) { if(!value) TaxPercentage = 0; RecalculateTotal(); }
+    partial void OnIsDiscountEnabledChanged(bool value) { 
+        SaveSettings();
+        if(!value) DiscountPercentage = 0; RecalculateTotal(); 
+        }
+    partial void OnIsTaxEnabledChanged(bool value) { 
+        SaveSettings();
+        if(!value) TaxPercentage = 0; RecalculateTotal(); 
+        }
     partial void OnDiscountPercentageChanged(decimal value) => RecalculateTotal();
     partial void OnTaxPercentageChanged(decimal value) => RecalculateTotal();
 
@@ -199,17 +263,81 @@ public partial class MainViewModel : ObservableObject
 
     public void ProcessBarcode(string barcode)
     {
-        if (!decimal.TryParse(BillingQuantity, out decimal qty) || qty <= 0) return;
-        using var db = new AppDbContext(); var product = db.Products.FirstOrDefault(p => p.Barcode == barcode);
-        if (product != null && product.StockQuantity >= qty)
+        using var db = new AppDbContext();
+        var product = db.Products.FirstOrDefault(p => p.Barcode == barcode);
+
+        if (product == null)
         {
-            product.StockQuantity -= qty; db.SaveChanges();
-            var existing = CurrentBill.FirstOrDefault(c => c.Item.Barcode == barcode);
-            if (existing != null) existing.Quantity += qty; else CurrentBill.Add(new CartItem(product, qty));
-            RecalculateTotal(); ScanResultMessage = $"✅ Added: {qty}x {product.Name}"; BillingQuantity = "1"; RefreshInventory(); 
+            ScanResultMessage = $"❌ Not found: {barcode}";
+            return;
         }
-        else ScanResultMessage = product == null ? $"❌ Not found: {barcode}" : $"⚠️ Only {product.StockQuantity} left.";
+
+        // Set up the prompt data
+        PromptProduct = product;
+        PromptInputQuantity = "1";
+
+        // Adapt the dropdown based on the product's Base Unit
+        PromptAvailableUnits.Clear();
+        if (product.BaseUnit == "Kg") { PromptAvailableUnits.Add("Kg"); PromptAvailableUnits.Add("g"); }
+        else if (product.BaseUnit == "L") { PromptAvailableUnits.Add("L"); PromptAvailableUnits.Add("ml"); }
+        else { PromptAvailableUnits.Add("Unit"); }
+
+        PromptSelectedUnit = PromptAvailableUnits.First(); // Select the first one by default
+
+        IsQuantityPromptOpen = true; // Show the overlay!
     }
+    
+    [RelayCommand]
+    public void ConfirmQuantity()
+    {
+        if (PromptProduct == null || !decimal.TryParse(PromptInputQuantity, out decimal inputQty) || inputQty <= 0) return;
+
+        // Calculate the actual base quantity. (e.g. 500g becomes 0.5 Kg)
+        decimal actualBaseQuantity = inputQty;
+        if (PromptSelectedUnit == "g" || PromptSelectedUnit == "ml")
+        {
+            actualBaseQuantity = inputQty / 1000m;
+        }
+
+        using var db = new AppDbContext();
+        var dbProduct = db.Products.Find(PromptProduct.Id);
+        
+        if (dbProduct != null && dbProduct.StockQuantity >= actualBaseQuantity)
+        {
+            // Deduct stock from DB
+            dbProduct.StockQuantity -= actualBaseQuantity; 
+            db.SaveChanges();
+            
+            // Format the display string (e.g., "500 g" or "2 Kg")
+            string displayLabel = $"{inputQty} {PromptSelectedUnit}";
+
+            // Check if item is already in cart
+            var existing = CurrentBill.FirstOrDefault(c => c.Item.Barcode == PromptProduct.Barcode);
+            if (existing != null) 
+            {
+                // Note: We standardize the cart to base units behind the scenes to keep math simple
+                existing.Quantity += actualBaseQuantity; 
+                existing.DisplayUnit = $"{existing.Quantity} {dbProduct.BaseUnit}"; 
+            } 
+            else 
+            {
+                CurrentBill.Add(new CartItem(dbProduct, actualBaseQuantity, displayLabel));
+            }
+
+            RecalculateTotal(); 
+            ScanResultMessage = $"✅ Added: {displayLabel} {dbProduct.Name}"; 
+            RefreshInventory(); 
+            IsQuantityPromptOpen = false;
+        }
+        else
+        {
+            ScanResultMessage = $"⚠️ Not enough stock! Only {dbProduct?.StockQuantity} {dbProduct?.BaseUnit} left.";
+            IsQuantityPromptOpen = false;
+        }
+    }
+
+    [RelayCommand]
+    public void CancelQuantityPrompt() => IsQuantityPromptOpen = false;
 
     private void RecalculateTotal()
     {
@@ -237,6 +365,8 @@ public partial class MainViewModel : ObservableObject
         foreach (var item in CurrentBill) suspended.Items.Add(item);
         SuspendedBills.Add(suspended); CurrentBill.Clear(); RecalculateTotal(); DiscountPercentage = 0; TaxPercentage = 0;
         ScanResultMessage = $"⏸️ Bill parked (ID: {suspended.Id}).";
+
+        SaveParkedBills();
     }
     [RelayCommand] public void OpenSuspendedBills() => IsSuspendedBillsOpen = true;
     [RelayCommand] public void CloseSuspendedBills() => IsSuspendedBillsOpen = false;
@@ -246,6 +376,8 @@ public partial class MainViewModel : ObservableObject
         if (CurrentBill.Any()) { ScanResultMessage = "⚠️ Finish current bill first!"; IsSuspendedBillsOpen = false; return; }
         foreach (var item in cart.Items) CurrentBill.Add(item);
         SuspendedBills.Remove(cart); RecalculateTotal(); IsSuspendedBillsOpen = false; ScanResultMessage = $"▶️ Resumed Bill {cart.Id}";
+
+        SaveParkedBills();
     }
     [RelayCommand]
     public void DeleteSuspendedBill(SuspendedCart cart)
@@ -253,6 +385,8 @@ public partial class MainViewModel : ObservableObject
         using var db = new AppDbContext();
         foreach (var cartItem in cart.Items) { var product = db.Products.FirstOrDefault(p => p.Barcode == cartItem.Item.Barcode); if (product != null) product.StockQuantity += cartItem.Quantity; }
         db.SaveChanges(); SuspendedBills.Remove(cart); RefreshInventory();
+
+        SaveParkedBills();
     }
 
     [RelayCommand]
@@ -298,9 +432,49 @@ public partial class MainViewModel : ObservableObject
     [RelayCommand] public void CloseReceipt() { IsReceiptOpen = false; ReceiptText = ""; }
     [RelayCommand] public void OpenNewProductForm() { ClearForm(); IsFormOpen = true; }
     [RelayCommand] public void CloseForm() { IsFormOpen = false; ClearForm(); }
-    [RelayCommand] public void EditProduct(Product product) { NewBarcode = product.Barcode; NewName = product.Name; NewPrice = product.Price.ToString("0.00"); NewQuantity = product.StockQuantity.ToString("0.##"); NewExpirationDate = product.ExpirationDate; IsFormOpen = true; }
-    [RelayCommand] public void SaveProduct() { if (string.IsNullOrWhiteSpace(NewBarcode) || string.IsNullOrWhiteSpace(NewName) || !decimal.TryParse(NewPrice, out decimal price) || !decimal.TryParse(NewQuantity, out decimal quantity)) return; using var db = new AppDbContext(); var existing = db.Products.FirstOrDefault(p => p.Barcode == NewBarcode); if (existing != null) { existing.Name = NewName; existing.Price = price; existing.StockQuantity = quantity; existing.ExpirationDate = NewExpirationDate; } else db.Products.Add(new Product { Barcode = NewBarcode, Name = NewName, Price = price, StockQuantity = quantity, ExpirationDate = NewExpirationDate }); db.SaveChanges(); RefreshInventory(); IsFormOpen = false; }
+    
+    [RelayCommand] 
+    public void EditProduct(Product product) { 
+        NewBarcode = product.Barcode; NewName = product.Name; NewPrice = product.Price.ToString("0.00"); 
+        NewQuantity = product.StockQuantity.ToString("0.##"); NewExpirationDate = product.ExpirationDate; 
+        NewBaseUnit = product.BaseUnit; 
+        IsFormOpen = true; 
+    }
+    [RelayCommand] 
+    public void SaveProduct() { 
+        if (string.IsNullOrWhiteSpace(NewBarcode) || string.IsNullOrWhiteSpace(NewName) || !decimal.TryParse(NewPrice, out decimal price) || !decimal.TryParse(NewQuantity, out decimal quantity)) return; 
+        using var db = new AppDbContext(); var existing = db.Products.FirstOrDefault(p => p.Barcode == NewBarcode); 
+        if (existing != null) { 
+            existing.Name = NewName; existing.Price = price; existing.StockQuantity = quantity; 
+            existing.ExpirationDate = NewExpirationDate; existing.BaseUnit = NewBaseUnit; // <-- ADD THIS
+        } else db.Products.Add(new Product { 
+            Barcode = NewBarcode, Name = NewName, Price = price, StockQuantity = quantity, 
+            ExpirationDate = NewExpirationDate, BaseUnit = NewBaseUnit // <-- ADD THIS
+        }); 
+        db.SaveChanges(); RefreshInventory(); IsFormOpen = false; 
+    }
+
+    private void ClearForm() { NewBarcode = ""; NewName = ""; NewPrice = ""; NewQuantity = ""; NewExpirationDate = null; NewBaseUnit = "Unit"; }
+
     [RelayCommand] public void DeleteProduct(Product product) { using var db = new AppDbContext(); db.Products.Remove(product); db.SaveChanges(); RefreshInventory(); }
     [RelayCommand] public void AddDirectlyToCart(Product product) => ProcessBarcode(product.Barcode);
-    private void ClearForm() { NewBarcode = ""; NewName = ""; NewPrice = ""; NewQuantity = ""; NewExpirationDate = null; }
+
+    [RelayCommand]
+    public void ExitApplication()
+    {
+        // SAFETY PROTOCOL: If the app is shut down while items are sitting in the checkout scanner,
+        // we MUST return them to the database so the inventory numbers stay perfectly accurate!
+        if (CurrentBill.Any())
+        {
+            using var db = new AppDbContext();
+            foreach (var cartItem in CurrentBill)
+            {
+                var product = db.Products.FirstOrDefault(p => p.Barcode == cartItem.Item.Barcode);
+                if (product != null) product.StockQuantity += cartItem.Quantity;
+            }
+            db.SaveChanges();
+        }
+        // command to instantly close the entire program
+        Environment.Exit(0);
+    }
 }
